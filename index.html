@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EchoBot: Responsive AI Chat Assistant</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://kit.fontawesome.com/a2d9a66f2e.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+  <header class="header-bar">
+    <div class="logo" id="logo">🌐 EchoBot</div>
+        <div class="user-menu-container">
+      <div class="user-icon" id="user-icon">
+        <i class="fas fa-user-circle fa-2x"></i>
+      </div>
+      <div class="user-dropdown" id="user-dropdown">
+        <button id="login-btn">Login</button>
+        <button id="signup-btn">Sign Up</button>
+      </div>
+    </div>
+
+  </header>
+  <main class="main-container" id="main">
+    <h1 class="main-title" id="main-title">What can I help with?</h1>
+
+    <div class="message-area" id="messages"></div>
+    <div class="typing-indicator" id="typing-indicator" style="display:none;">
+      <div class="bot-avatar"><i class="fas fa-robot"></i></div>
+      <span>EchoBot is typing<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>
+    </div>
+
+    <div class="input-container">
+      <input type="text" id="user-input" placeholder="Ask anything" class="chat-input"
+        onkeydown="handleKeyPress(event)" />
+      <div class="input-icons">
+        <button id="voice-btn" title="Voice"><i class="fas fa-microphone"></i></button>
+        <button id="send-btn" title="Send"><i class="fas fa-paper-plane"></i></button>
+      </div>
+    </div>
+    <div class="slidebar" id="slidebar">
+      <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle Sidebar">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="newchat">
+        <button id="new-chat-btn" class="new-chat-button">
+          <i class="fas fa-plus"></i><span>New Chat</span>
+        </button>
+      </div>
+      <div class="searchchat">
+        <button id="search-chat-btn" class="search-chat-button">
+          <i class="fas fa-search"></i><span>Search Chat</span>
+        </button>
+
+      </div>
+
+      <div class="chat-history">
+        <h2 class="chat-history-title">Chat History</h2>
+        <ul class="chat-history-list" id="chat-history-list">
+          <!-- Chat history items will be dynamically added here -->
+        </ul>
+        <button id="export-chat-btn" class="new-chat-button" style="margin-top:10px;">
+          <i class="fas fa-download"></i> <span>Export All</span>
+        </button>
+
+      </div>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+  <script>
+    // User menu dropdown logic
+    const userIcon = document.getElementById('user-icon');
+    const userDropdown = document.getElementById('user-dropdown');
+    let loggedIn = false;
+
+    function updateUserMenu() {
+      if (loggedIn) {
+        userDropdown.innerHTML = '<button id="logout-btn">Logout</button>';
+        document.getElementById('logout-btn').onclick = function() {
+          fetch('/logout', {method: 'POST', credentials: 'include'})
+            .then(() => { loggedIn = false; updateUserMenu(); });
+        };
+      } else {
+        userDropdown.innerHTML = '<button id="login-btn">Login</button><button id="signup-btn">Sign Up</button>';
+        document.getElementById('login-btn').onclick = function() {
+          window.location.href = '/login.html';
+        };
+        document.getElementById('signup-btn').onclick = function() {
+          window.location.href = '/signup.html';
+        };
+      }
+    }
+
+    userIcon.onclick = function() {
+      userDropdown.classList.toggle('show');
+    };
+    document.addEventListener('click', function(e) {
+      if (!userIcon.contains(e.target) && !userDropdown.contains(e.target)) {
+        userDropdown.classList.remove('show');
+      }
+    });
+    updateUserMenu();
+
+    // Optionally, check login status on load (simple check)
+    fetch('/chats', {credentials: 'include'}).then(r => {
+      if (r.status === 200) { loggedIn = true; updateUserMenu(); }
+    });
+
+    // Dark mode toggle
+    const darkModeBtn = document.createElement('button');
+    darkModeBtn.innerHTML = '<i class="fas fa-moon"></i>';
+    darkModeBtn.className = 'dark-mode-toggle';
+    document.body.appendChild(darkModeBtn);
+    darkModeBtn.onclick = function() {
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+    };
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.body.classList.add('dark-mode');
+    }
+
+    // Typing indicator logic
+    function showTypingIndicator(show) {
+      document.getElementById('typing-indicator').style.display = show ? 'flex' : 'none';
+    }
+
+    // Example usage: showTypingIndicator(true) when waiting for bot response
+    // and showTypingIndicator(false) when response arrives.
+    // You should call these in your chat logic in script.js
+
+    // Avatars: Add avatar HTML in your JS when rendering messages
+    // Example: <div class="avatar user-avatar"><i class="fas fa-user"></i></div> for user
+    // and <div class="avatar bot-avatar"><i class="fas fa-robot"></i></div> for bot
+
+    // Sidebar toggle logic
+    const sidebar = document.getElementById('slidebar');
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    let sidebarOpen = true;
+    sidebarToggle.onclick = function() {
+      sidebarOpen = !sidebarOpen;
+      if (sidebarOpen) {
+        sidebar.classList.remove('sidebar-hidden');
+        document.body.classList.remove('sidebar-collapsed');
+      } else {
+        sidebar.classList.add('sidebar-hidden');
+        document.body.classList.add('sidebar-collapsed');
+      }
+    };
+  </script>
+</body>
+
+</html>
